@@ -86,7 +86,7 @@ const PageLayout = () => {
           >
             <a onClick={(e) => e.preventDefault()}>
               <Space>
-                {userInfo.username}
+                {userInfo?.username}
                 <DownOutlined />
               </Space>
             </a>
