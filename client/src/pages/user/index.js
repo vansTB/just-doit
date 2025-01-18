@@ -3,6 +3,7 @@ import {
   Button,
   Form,
   Input,
+  message,
   Modal,
   Popconfirm,
   Select,
@@ -11,13 +12,16 @@ import {
   Table,
 } from "antd";
 import { Option } from "antd/es/mentions";
+import { timeFormat } from "@/utlis";
 import { TimePicker } from "antd";
 import dayjs from "dayjs";
 import "./user.scss";
+import { http } from "@/utlis";
 
 const User = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentEditItem, setCurrentEditItem] = useState({});
+  const [roleList, setRoleList] = useState([]);
   const [form] = Form.useForm();
 
   const layout = {
@@ -32,9 +36,13 @@ const User = () => {
   const columns = [
     {
       title: "Name",
-      dataIndex: "name",
-      key: "name",
-      render: (text) => <a>{text}</a>,
+      dataIndex: "username",
+      key: "username",
+    },
+    {
+      title: "RoleName",
+      dataIndex: "role_name",
+      key: "role_name",
     },
     {
       title: "Gender",
@@ -65,6 +73,7 @@ const User = () => {
       title: "NotifyTime",
       dataIndex: "notifyTime",
       key: "notifyTime",
+      render: (_, { notifyTime }) => timeFormat(notifyTime, "hh:mm:ss"),
     },
 
     {
@@ -76,7 +85,7 @@ const User = () => {
           <Popconfirm
             title="Delete the task"
             description={`Are you sure to delete 【${record.name}】 ?`}
-            onConfirm={onDeleteConfirm}
+            onConfirm={() => onDeleteConfirm(record.id)}
             okText="Yes"
             cancelText="No"
           >
@@ -86,45 +95,31 @@ const User = () => {
       ),
     },
   ];
-  const data = [
-    {
-      key: "1",
-      name: "悟空",
-      gender: "1",
-      email: "160636@qq.com",
-      isNotify: 1,
-      notifyTime: "16:51:00",
-    },
-    {
-      key: "2",
-      name: "八戒",
-      gender: "1",
-      email: "16063655@qq.com",
-      isNotify: 0,
-      notifyTime: "16:52:00",
-    },
-    {
-      key: "3",
-      name: "蛛儿",
-      gender: "2",
-      email: "160636551@qq.com",
-      isNotify: 1,
-      notifyTime: "16:53:00",
-    },
-  ];
+
   const handleNotifyChange = (val) => {
     console.log("handleNotifyChange", val);
   };
+  const [data, setData] = useState([]);
+  const [isLoading, setLoading] = useState(false);
+  // 获取数据，相当于created
+  useEffect(() => {
+    setLoading(true);
+    getData();
+    http.get("/role/list").then((res) => {
+      setRoleList(res.data);
+    });
+  }, []);
 
   const handleItemEdit = (item) => {
     console.log("item", item);
 
     setCurrentEditItem(
-      item.key
+      item.id
         ? item
         : {
-            key: "empty",
-            name: "",
+            id: "empty",
+            role_id: "",
+            username: "",
             gender: "",
             email: "",
             isNotify: "",
@@ -136,7 +131,7 @@ const User = () => {
   useEffect(() => {
     console.log("currentEditItem====", currentEditItem);
 
-    if (currentEditItem && currentEditItem.key) {
+    if (currentEditItem && currentEditItem.id) {
       console.log(
         'dayjs(currentEditItem.notifyTime, "HH:mm:ss").toDate()',
         dayjs(currentEditItem.notifyTime, "HH:mm:ss").toDate()
@@ -151,12 +146,47 @@ const User = () => {
     }
   }, [currentEditItem]);
 
-  const onDeleteConfirm = () => {
-    console.log("onDeleteConfirm");
+  const getData = () => {
+    http.get("/user/list").then((res) => {
+      setLoading(false);
+      if (res.code == 200) {
+        setData(res.data);
+      }
+    });
   };
-  const handleOk = () => {
+
+  const onDeleteConfirm = (id) => {
+    http.post("/user/delete", { id }).then((res) => {
+      if (res.code == 200) {
+        message.success(res.data.message);
+        getData();
+      }
+    });
+  };
+  const handleOk = async () => {
     console.log(form.getFieldValue());
-    setIsModalOpen(false);
+    // setIsModalOpen(false);
+    form
+      .validateFields()
+      .then(async (res) => {
+        let params = form.getFieldValue();
+        console.log(
+          "role",
+          roleList.find((i) => i.id == params.role_id)
+        );
+        params.isNotify = params.isNotify ? 1 : 0;
+        params.id = params.id === "empty" ? null : params.id;
+        params.role_name = roleList.find((i) => i.id == params.role_id)["name"];
+        const result = await http.post("/user/save", params);
+        if (result.code == 200) {
+          message.success(result.data.message);
+          setIsModalOpen(false);
+          getData();
+        }
+      })
+      .catch((err) => {
+        console.log("err", err);
+      });
   };
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -166,17 +196,23 @@ const User = () => {
       <Button type="primary" className="add" onClick={() => handleItemEdit({})}>
         add
       </Button>
-      <Table columns={columns} dataSource={data} />;
+      <Table
+        columns={columns}
+        dataSource={data}
+        rowKey="id"
+        loading={isLoading}
+      />
       <Modal
         title="User Modal"
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
+        destroyOnClose
       >
         <Form form={form} name="user-form" {...layout} onFinish={handleOk}>
           <Form.Item
-            name="name"
-            label="Name"
+            name="username"
+            label="Username"
             rules={[
               {
                 required: true,
@@ -184,6 +220,25 @@ const User = () => {
             ]}
           >
             <Input value={currentEditItem.name} />
+          </Form.Item>
+          <Form.Item
+            name="role_id"
+            label="Role"
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+          >
+            <Select
+              placeholder="role"
+              value={currentEditItem.role_id}
+              allowClear
+            >
+              {roleList.map((i) => {
+                return <Select.Option value={i.id}>{i.name}</Select.Option>;
+              })}
+            </Select>
           </Form.Item>
           <Form.Item
             name="gender"
@@ -199,8 +254,8 @@ const User = () => {
               value={currentEditItem.gender}
               allowClear
             >
-              <Select.Option value="1">male</Select.Option>
-              <Select.Option value="2">female</Select.Option>
+              <Select.Option value={1}>male</Select.Option>
+              <Select.Option value={2}>female</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item

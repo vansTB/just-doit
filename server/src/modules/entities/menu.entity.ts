@@ -1,5 +1,6 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToMany } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
+import { RoleEntity } from './role.entity';
 
 @Entity('just_doit_menu')
 export class MenuEntity extends BaseEntity {
@@ -10,13 +11,20 @@ export class MenuEntity extends BaseEntity {
   type: string;
 
   @Column({ comment: '上级ID' })
-  parentId: Number;
+  parent_id: Number;
 
   @Column({ length: 100, comment: '图标' })
   icon: string;
+
   @Column({ length: 100, comment: '路由访问路径' })
   path: string;
 
   @Column({ length: 100, comment: '路由文件路径' })
-  pageUrl: string;
+  page_url: string;
+
+  @ManyToMany(() => RoleEntity, (roles) => roles.menus, {
+    onDelete: 'NO ACTION',
+    onUpdate: 'CASCADE',
+  })
+  roles: RoleEntity[];
 }

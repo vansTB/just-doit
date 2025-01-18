@@ -38,4 +38,26 @@ export class UserService {
       message: '账号或密码错误',
     });
   }
+  async list() {
+    return await this.userStore.find();
+  }
+  async save(data) {
+    if (data.id) {
+      await this.userStore.save(data);
+      return {
+        message: '编辑成功',
+      };
+    } else {
+      let tmpUser = new UserEntity();
+      tmpUser = Object.assign(tmpUser, data);
+      await this.userStore.save(tmpUser);
+      return {
+        message: '新增成功',
+      };
+    }
+  }
+  async delete(id) {
+    await this.userStore.delete(id);
+    return { message: '删除成功' };
+  }
 }

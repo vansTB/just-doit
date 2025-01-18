@@ -7,6 +7,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserController } from './controllers/user/user.controller';
 import { UserService } from './controllers/user/user.service';
 import { ENTITY } from './entities';
+import { RoleController } from './controllers/role/role.controller';
+import { RoleService } from './controllers/role/role.service';
 
 @Module({
   imports: [
@@ -15,10 +17,10 @@ import { ENTITY } from './entities';
     JwtModule.register({
       global: true,
       secret: 'just_doit',
-      signOptions: { expiresIn: '10s' },
+      signOptions: { expiresIn: '3600s' },
     }),
   ],
-  controllers: [RecordController, UserController],
-  providers: [RecordService, UserService],
+  controllers: [RecordController, UserController, RoleController],
+  providers: [RecordService, UserService, RoleService],
 })
 export class IndexModule {}
