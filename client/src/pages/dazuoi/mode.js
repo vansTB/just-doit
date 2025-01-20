@@ -12,7 +12,7 @@ import {
   Tag,
   Tooltip,
 } from "antd";
-import "./theme.scss";
+import "./mode.scss";
 
 const Theme = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

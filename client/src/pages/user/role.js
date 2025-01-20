@@ -1,6 +1,7 @@
 import React, { Fragment, useEffect, useState } from "react";
 import {
   Button,
+  Cascader,
   Form,
   Input,
   message,
@@ -12,7 +13,7 @@ import {
   Table,
 } from "antd";
 import { Option } from "antd/es/mentions";
-import { timeFormat } from "@/utlis";
+import { handleMenuListToTree, timeFormat } from "@/utlis";
 import { TimePicker } from "antd";
 import dayjs from "dayjs";
 import "./user.scss";
@@ -20,10 +21,10 @@ import { http } from "@/utlis";
 
 const Role = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentEditItem, setCurrentEditItem] = useState({});
-  const [roleList, setRoleList] = useState([]);
+  const [menuOptions, setMenuOptions] = useState([]);
   const [form] = Form.useForm();
-
+  const { SHOW_CHILD } = Cascader;
+  let itemMenuSelecteds = [];
   const layout = {
     labelCol: {
       span: 5,
@@ -36,51 +37,24 @@ const Role = () => {
   const columns = [
     {
       title: "Name",
-      dataIndex: "username",
-      key: "username",
+      dataIndex: "name",
+      key: "name",
     },
+
     {
-      title: "RoleName",
-      dataIndex: "role_name",
-      key: "role_name",
-    },
-    {
-      title: "Gender",
-      dataIndex: "gender",
-      key: "gender",
-      render: (_, { gender }) => (
-        <>
-          <div>{gender === 1 ? "male" : "female"}</div>
-        </>
-      ),
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Notify",
-      dataIndex: "isNotify",
-      key: "isNotify",
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
       render: (_, record) => (
         <>
           <Switch
             disabled
-            checked={!!record.isNotify}
+            checked={!!record.status}
             onChange={(val) => handleNotifyChange(val, record)}
           />
         </>
       ),
     },
-    {
-      title: "NotifyTime",
-      dataIndex: "notifyTime",
-      key: "notifyTime",
-      render: (_, { notifyTime }) =>
-        notifyTime ? timeFormat(notifyTime, "hh:mm:ss") : "-",
-    },
-
     {
       title: "Action",
       key: "action",
@@ -107,7 +81,7 @@ const Role = () => {
       isNotify: val ? 1 : 0,
       notifyTime: "",
     };
-    const result = await http.post("/user/save", params);
+    const result = await http.post("/role/save", params);
     if (result.code == 200) {
       message.success(result.data.message);
       getData();
@@ -119,58 +93,64 @@ const Role = () => {
   useEffect(() => {
     setLoading(true);
     getData();
-    http.get("/role/list").then((res) => {
-      setRoleList(res.data);
+    http.get("/menu/list").then((res) => {
+      const { tree } = handleMenuListToTree(res.data);
+      setMenuOptions(tree);
     });
   }, []);
 
   const handleItemEdit = (item) => {
     console.log("item", item);
 
-    setCurrentEditItem(
-      item.id
-        ? item
-        : {
-            id: "empty",
-            role_id: "",
-            username: "",
-            gender: "",
-            email: "",
-            isNotify: "",
-            notifyTime: null,
-          }
-    );
+    const params = item.id
+      ? item
+      : {
+          id: "empty",
+          name: "",
+          status: true,
+          menuIds: [],
+        };
+
+    form.setFieldsValue(params);
+    setIsModalOpen(true);
     console.log("---");
   };
-  useEffect(() => {
-    console.log("currentEditItem====", currentEditItem);
-
-    if (currentEditItem && currentEditItem.id) {
-      console.log(
-        'dayjs(currentEditItem.notifyTime, "HH:mm:ss").toDate()',
-        dayjs(currentEditItem.notifyTime, "HH:mm:ss").toDate()
-      );
-      form.setFieldsValue({
-        ...currentEditItem,
-        notifyTime: currentEditItem.notifyTime
-          ? dayjs(currentEditItem.notifyTime, "HH:mm:ss")
-          : null,
-      });
-      setIsModalOpen(true);
-    }
-  }, [currentEditItem]);
 
   const getData = () => {
-    http.get("/user/list").then((res) => {
+    http.get("/role/list").then((res) => {
       setLoading(false);
       if (res.code == 200) {
+        res.data.forEach((i) => {
+          let menuIds = [],
+            menuNames = [];
+          if (i.menus.length) {
+            i.menuTree = handleMenuListToTree(i.menus).tree;
+            i.menuTree.forEach((m) => {
+              let tmpMenuIds = [[m.id]];
+              menuNames.push(m.label);
+              if (m.children) {
+                tmpMenuIds = [];
+                m.children.map((c) => {
+                  menuNames.push(c.label);
+                  tmpMenuIds.push([m.id, c.id]);
+                  return c.id;
+                });
+                console.log("menuIds", menuIds);
+              }
+              menuIds = menuIds.concat(tmpMenuIds);
+            });
+            i.menuIds = menuIds;
+            i.menuNames = menuNames;
+          }
+        });
+        console.log("---res.data", res.data);
         setData(res.data);
       }
     });
   };
 
   const onDeleteConfirm = (id) => {
-    http.post("/user/delete", { id }).then((res) => {
+    http.post("/role/delete", { id }).then((res) => {
       if (res.code == 200) {
         message.success(res.data.message);
         getData();
@@ -183,16 +163,14 @@ const Role = () => {
     form
       .validateFields()
       .then(async (res) => {
+        console.log(res);
         let params = form.getFieldValue();
-        console.log(
-          "role",
-          roleList.find((i) => i.id == params.role_id)
-        );
-        params.isNotify = params.isNotify ? 1 : 0;
-        params.notifyTime = params.isNotify ? params.notifyTime : "";
         params.id = params.id === "empty" ? null : params.id;
-        params.role_name = roleList.find((i) => i.id == params.role_id)["name"];
-        const result = await http.post("/user/save", params);
+        params.menuIds = params.menuIds.length
+          ? [...new Set(params.menuIds.flat())]
+          : [];
+        params.status = params.status ? 1 : 0;
+        const result = await http.post("/role/save", params);
         if (result.code == 200) {
           message.success(result.data.message);
           setIsModalOpen(false);
@@ -203,16 +181,9 @@ const Role = () => {
         console.log("err", err);
       });
   };
-  const handleCancel = () => {
-    setCurrentEditItem({});
-    setIsModalOpen(false);
-  };
 
-  const handleFormIsNotifyChange = (val) => {
-    setCurrentEditItem({
-      ...currentEditItem,
-      isNotify: val,
-    });
+  const handleMenuChange = (val, all) => {
+    itemMenuSelecteds = all;
   };
   return (
     <Fragment>
@@ -229,109 +200,58 @@ const Role = () => {
         title="Role Modal"
         open={isModalOpen}
         onOk={handleOk}
-        onCancel={handleCancel}
+        onCancel={() => setIsModalOpen(false)}
         destroyOnClose
       >
         <Form form={form} name="user-form" {...layout} onFinish={handleOk}>
           <Form.Item
-            name="username"
-            label="Username"
+            name="name"
+            label="RoleName"
             rules={[
               {
                 required: true,
               },
             ]}
           >
-            <Input value={currentEditItem.name} />
+            <Input />
           </Form.Item>
           <Form.Item
-            name="role_id"
-            label="Role"
+            name="menuIds"
+            label="Menu"
             rules={[
               {
                 required: true,
               },
             ]}
           >
-            <Select
-              placeholder="role"
-              value={currentEditItem.role_id}
-              allowClear
-            >
-              {roleList.map((i) => {
-                return (
-                  <Select.Option key={i.id} value={i.id}>
-                    {i.name}
-                  </Select.Option>
-                );
-              })}
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="gender"
-            label="Gender"
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-          >
-            <Select
-              placeholder="gender"
-              value={currentEditItem.gender}
-              allowClear
-            >
-              <Select.Option key={1} value={1}>
-                male
-              </Select.Option>
-              <Select.Option key={2} value={2}>
-                female
-              </Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-          >
-            <Input value={currentEditItem.email} />
+            <Cascader
+              style={{
+                width: "100%",
+              }}
+              options={menuOptions}
+              showCheckedStrategy={SHOW_CHILD}
+              onChange={handleMenuChange}
+              fieldNames={{
+                label: "label",
+                value: "id",
+                children: "children",
+              }}
+              multiple
+              maxTagCount="responsive"
+            />
           </Form.Item>
 
           <Form.Item
-            name="isNotify"
-            label="Notify"
+            name="status"
+            label="Status"
             rules={[
               {
                 required: true,
               },
             ]}
           >
-            <Switch
-              checked={!!currentEditItem.isNotify}
-              onChange={(e) => {
-                handleFormIsNotifyChange(e);
-              }}
-            />
+            <Switch />
           </Form.Item>
-          {currentEditItem.isNotify ? (
-            <Form.Item
-              name="notifyTime"
-              label="NotifyTime"
-              rules={[
-                {
-                  required: true,
-                },
-              ]}
-            >
-              <TimePicker />
-            </Form.Item>
-          ) : (
-            ""
-          )}
         </Form>
       </Modal>
     </Fragment>

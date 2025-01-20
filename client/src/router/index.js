@@ -2,8 +2,8 @@ import { createBrowserRouter } from "react-router-dom";
 import Layout from "@/pages/layout";
 import Login from "@/pages/login";
 import User from "@/pages/user";
-import Record from "@/pages/clock/record";
-import Theme from "@/pages/clock/theme";
+import Record from "@/pages/dazuoi/record";
+import Theme from "@/pages/dazuoi/mode";
 import Home from "@/pages/home";
 import { AuthRoute } from "@/components/authRoute";
 import Menu from "@/pages/user/menu";
@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
         element: <Record />,
       },
       {
-        path: "/theme",
+        path: "/mode",
         element: <Theme />,
       },
       {

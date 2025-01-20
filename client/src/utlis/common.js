@@ -27,3 +27,24 @@ export function timeFormat(originVal, fmt) {
 
   return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
 }
+
+export function handleMenuListToTree(data) {
+  let tmpArr1 = [];
+  for (let i = 0; i < data.length; i++) {
+    const item = data[i];
+    if (item.type == 1) {
+      tmpArr1.push(item);
+      for (let j = i; j < data.length; j++) {
+        let jtem = data[j];
+        if (jtem.parent_id === item.id) {
+          item.children = item.children || [];
+          item.children.push(jtem);
+        }
+      }
+    }
+  }
+  return {
+    tree: data.filter((i) => !i.parent_id),
+    moduleList: tmpArr1,
+  };
+}

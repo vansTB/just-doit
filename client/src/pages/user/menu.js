@@ -13,7 +13,7 @@ import {
 } from "antd";
 
 import "./user.scss";
-import { http } from "@/utlis";
+import { handleMenuListToTree, http } from "@/utlis";
 
 const Menu = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,25 +116,10 @@ const Menu = () => {
       setLoading(false);
       console.log("res.data", res.data);
       if (res.code == 200) {
-        let tmpArr1 = [];
-        const data = res.data;
-        for (let i = 0; i < data.length; i++) {
-          const item = data[i];
-          if (item.type == 1) {
-            tmpArr1.push(item);
-            for (let j = i; j < data.length; j++) {
-              let jtem = data[j];
-              if (jtem.parent_id === item.id) {
-                item.children = item.children || [];
-                item.children.push(jtem);
-              }
-            }
-          }
-        }
-        console.log("res.data", res.data);
+        const { tree, moduleList } = handleMenuListToTree(res.data);
         setData({
-          tableList: res.data.filter((i) => !i.parent_id),
-          moduleList: tmpArr1,
+          tableList: tree,
+          moduleList,
         });
       }
     });
