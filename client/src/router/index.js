@@ -6,6 +6,8 @@ import Record from "@/pages/clock/record";
 import Theme from "@/pages/clock/theme";
 import Home from "@/pages/home";
 import { AuthRoute } from "@/components/authRoute";
+import Menu from "@/pages/user/menu";
+import Role from "@/pages/user/role";
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +19,15 @@ export const router = createBrowserRouter([
     ),
     redirect: "/home",
     children: [
+      {
+        path: "/menu",
+        element: <Menu />,
+        parent: "user-module",
+      },
+      {
+        path: "/role",
+        element: <Role />,
+      },
       {
         path: "/user",
         element: <User />,

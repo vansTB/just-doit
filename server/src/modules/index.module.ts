@@ -9,6 +9,8 @@ import { UserService } from './controllers/user/user.service';
 import { ENTITY } from './entities';
 import { RoleController } from './controllers/role/role.controller';
 import { RoleService } from './controllers/role/role.service';
+import { MenuController } from './controllers/menu/menu.controller';
+import { MenuService } from './controllers/menu/menu.service';
 
 @Module({
   imports: [
@@ -20,7 +22,12 @@ import { RoleService } from './controllers/role/role.service';
       signOptions: { expiresIn: '3600s' },
     }),
   ],
-  controllers: [RecordController, UserController, RoleController],
-  providers: [RecordService, UserService, RoleService],
+  controllers: [
+    RecordController,
+    UserController,
+    RoleController,
+    MenuController,
+  ],
+  providers: [RecordService, UserService, RoleService, MenuService],
 })
 export class IndexModule {}

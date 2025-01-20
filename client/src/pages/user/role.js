@@ -18,7 +18,7 @@ import dayjs from "dayjs";
 import "./user.scss";
 import { http } from "@/utlis";
 
-const User = () => {
+const Role = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentEditItem, setCurrentEditItem] = useState({});
   const [roleList, setRoleList] = useState([]);
@@ -226,7 +226,7 @@ const User = () => {
         loading={isLoading}
       />
       <Modal
-        title="User Modal"
+        title="Role Modal"
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
@@ -337,4 +337,4 @@ const User = () => {
     </Fragment>
   );
 };
-export default User;
+export default Role;
