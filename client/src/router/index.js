@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Route } from "react-router-dom";
 import Layout from "@/pages/layout";
 import Login from "@/pages/login";
 import User from "@/pages/user";
@@ -8,7 +8,12 @@ import Home from "@/pages/home";
 import { AuthRoute } from "@/components/authRoute";
 import Menu from "@/pages/user/menu";
 import Role from "@/pages/user/role";
+import { userStore } from "@/store/user";
+import { useState } from "react";
 
+console.log("store", userStore.getState());
+
+const [routes, setRoutes] = useState;
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -21,6 +26,11 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/menu",
+        // element: (
+        //   <Route key={"/menu"} path={"/menu"} element={<route.component />}>
+        //     {renderRoutes(route.children)}
+        //   </Route>
+        // ),
         element: <Menu />,
         parent: "user-module",
       },

@@ -11,6 +11,8 @@ import { RoleController } from './controllers/role/role.controller';
 import { RoleService } from './controllers/role/role.service';
 import { MenuController } from './controllers/menu/menu.controller';
 import { MenuService } from './controllers/menu/menu.service';
+import { ModeController } from './controllers/mode/mode.controller';
+import { ModeService } from './controllers/mode/mode.service';
 
 @Module({
   imports: [
@@ -27,7 +29,14 @@ import { MenuService } from './controllers/menu/menu.service';
     UserController,
     RoleController,
     MenuController,
+    ModeController,
   ],
-  providers: [RecordService, UserService, RoleService, MenuService],
+  providers: [
+    RecordService,
+    UserService,
+    RoleService,
+    MenuService,
+    ModeService,
+  ],
 })
 export class IndexModule {}

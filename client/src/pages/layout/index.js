@@ -1,76 +1,67 @@
 import React, { useEffect, useState } from "react";
-import {
-  DesktopOutlined,
-  DownOutlined,
-  PieChartOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { DownOutlined } from "@ant-design/icons";
 import "./index.scss";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { createFromIconfontCN } from "@ant-design/icons";
 
 import { Dropdown, Layout, Menu, message, Space } from "antd";
 import { userStore } from "@/store/user";
 const { Sider } = Layout;
 
-const IconFont = createFromIconfontCN({
-  scriptUrl: "//at.alicdn.com/t/c/font_4815467_9fmf40kgjwj.js",
-});
+// const IconFont = createFromIconfontCN({
+//   scriptUrl: "//at.alicdn.com/t/c/font_4815467_9fmf40kgjwj.js",
+// });
 
-const items = [
-  {
-    label: "首页",
-    key: "/home",
-    icon: (
-      <Space>
-        <IconFont type="icon-zhuye" />
-      </Space>
-    ),
-  },
-  {
-    label: "用户管理",
-    icon: <IconFont type="icon-yonghu" />,
-    key: "user-module",
-    children: [
-      {
-        label: "用户列表",
-        key: "/user",
-      },
-      {
-        label: "角色列表",
-        key: "/role",
-      },
-      {
-        label: "菜单列表",
-        key: "/menu",
-      },
-    ],
-  },
-  {
-    label: "时刻管理",
-    icon: <IconFont type="icon-dazuo" />,
-    key: "moment-module",
-    children: [
-      {
-        label: "主题",
-        key: "/theme",
-      },
-      {
-        label: "记录",
-        key: "/record",
-      },
-    ],
-  },
-];
+// const items = [
+//   {
+//     label: "首页",
+//     key: "/home",
+//     icon: <IconFont type="icon-zhuye" />,
+//   },
+//   {
+//     label: "用户管理",
+//     icon: <IconFont type="icon-yonghu" />,
+//     key: "user-module",
+//     children: [
+//       {
+//         label: "用户列表",
+//         key: "/user",
+//       },
+//       {
+//         label: "角色列表",
+//         key: "/role",
+//       },
+//       {
+//         label: "菜单列表",
+//         key: "/menu",
+//       },
+//     ],
+//   },
+//   {
+//     label: "时刻管理",
+//     icon: <IconFont type="icon-dazuo" />,
+//     key: "moment-module",
+//     children: [
+//       {
+//         label: "主题",
+//         key: "/theme",
+//       },
+//       {
+//         label: "记录",
+//         key: "/record",
+//       },
+//     ],
+//   },
+// ];
 
 const PageLayout = () => {
   const navigate = useNavigate();
-  const { userInfo, removeUser } = userStore();
+  const { userInfo, removeUser, getUserMenus } = userStore();
   const [collapsed, setCollapsed] = useState(false);
   const [currentRouteInfo, setCurrentRouteInfo] = useState({
     path: "",
     module: "",
   });
+  const [items, setItems] = useState([]);
   const location = useLocation();
 
   const getRouteInfo = (path) => {
@@ -98,7 +89,9 @@ const PageLayout = () => {
   console.log("location", location);
   useEffect(() => {
     console.log("useEffect=======", location);
-
+    // console.log("getUserMenus", getUserMenus());
+    // items;
+    setItems(getUserMenus().tree);
     setCurrentRouteInfo({ path: location.pathname });
     getRouteInfo(location.pathname);
   }, []);
@@ -149,8 +142,10 @@ const PageLayout = () => {
             menu={{
               items: userItems,
             }}
+            trigger="click"
+            arrow={false}
           >
-            <a onClick={(e) => handleDrowDownClick()}>
+            <a onClick={(e) => e.preventDefault()}>
               <Space>
                 {userInfo?.username}
                 <DownOutlined />

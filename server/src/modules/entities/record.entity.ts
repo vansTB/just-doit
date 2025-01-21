@@ -6,6 +6,9 @@ export class RecordEntity extends BaseEntity {
   @Column({ comment: '记录状态，1：已完成，0：未完成' })
   status: Number;
 
-  @Column({ length: 100, comment: '未完成时持续时间' })
+  @Column({ comment: '模式ID' })
+  modeId: Number;
+
+  @Column({ length: 100, comment: '持续时间' })
   duringTime: string;
 }

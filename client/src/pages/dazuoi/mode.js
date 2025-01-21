@@ -3,6 +3,7 @@ import {
   Button,
   Form,
   Input,
+  message,
   Modal,
   Popconfirm,
   Select,
@@ -13,10 +14,12 @@ import {
   Tooltip,
 } from "antd";
 import "./mode.scss";
+import { http } from "@/utlis";
 
 const Theme = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentEditItem, setCurrentEditItem] = useState({});
+  const [data, setData] = useState([]);
+  const [isLoading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
   const layout = {
@@ -41,8 +44,8 @@ const Theme = () => {
       key: "type",
       render: (_, { type }) => (
         <>
-          <Tag color={type == 1 ? "green" : "blue"}>
-            {type == 1 ? "正计时" : "倒计时"}
+          <Tag color={type == 1 ? "green" : type == 2 ? "blue" : "orange"}>
+            {type == 1 ? "正计时" : type == 2 ? "倒计时" : "不计时"}
           </Tag>
         </>
       ),
@@ -53,7 +56,7 @@ const Theme = () => {
       key: "time",
       render: (_, { time }) => (
         <>
-          <div>{time + "min"}</div>
+          <div>{time ? time + "min" : "-"}</div>
         </>
       ),
     },
@@ -98,55 +101,64 @@ const Theme = () => {
       ),
     },
   ];
-  const data = [
-    {
-      key: "1",
-      name: "番茄钟",
-      type: 2,
-      time: 25,
-      create_at: "2025-01-15",
-      remark:
-        "倒计时25分钟，即为番茄钟，这是一个很热门的学习时段，符合人的精力规律",
-    },
-    {
-      key: "3",
-      name: "测试正计时2",
-      type: 1,
-      time: 30,
-      create_at: "2025-01-15",
-      remark: "这是个正计时",
-    },
-    {
-      key: "2",
-      name: "测试倒计时",
-      type: 2,
-      time: 40,
-      create_at: "2025-01-15",
-      remark: "",
-    },
-  ];
+  // const data = [
+  //   {
+  //     key: "1",
+  //     name: "番茄钟",
+  //     type: 2,
+  //     time: 25,
+  //     create_at: "2025-01-15",
+  //     remark:
+  //       "倒计时25分钟，即为番茄钟，这是一个很热门的学习时段，符合人的精力规律",
+  //   },
+  //   {
+  //     key: "3",
+  //     name: "测试正计时2",
+  //     type: 1,
+  //     time: 30,
+  //     create_at: "2025-01-15",
+  //     remark: "这是个正计时",
+  //   },
+  //   {
+  //     key: "2",
+  //     name: "测试倒计时",
+  //     type: 2,
+  //     time: 40,
+  //     create_at: "2025-01-15",
+  //     remark: "",
+  //   },
+  // ];
 
   const handleItemEdit = (item) => {
     console.log("item", item);
-
-    setCurrentEditItem(
-      item.key
-        ? item
-        : {
-            key: "empty",
-            name: "",
-            type: "",
-            time: "",
-            remark: "",
-          }
-    );
+    let params = item.id
+      ? item
+      : {
+          key: "empty",
+          name: "",
+          type: "",
+          time: "",
+          remark: "",
+        };
+    form.setFieldsValue(params);
+    setIsModalOpen(true);
   };
+  // 获取数据，相当于created
   useEffect(() => {
-    if (currentEditItem && currentEditItem.key) {
-      form.setFieldsValue(currentEditItem);
-      setIsModalOpen(true);
-    }
-  }, [currentEditItem]);
+    getData();
+  }, []);
+
+  const getData = () => {
+    setLoading(true);
+
+    http.get("/mode/list").then((res) => {
+      setLoading(false);
+      console.log("res.data", res.data);
+      if (res.code == 200) {
+        setData(res.data);
+      }
+    });
+  };
 
   const onDeleteConfirm = () => {
     console.log("onDeleteConfirm");
@@ -154,9 +166,15 @@ const Theme = () => {
   const handleOk = async () => {
     form
       .validateFields()
-      .then((res) => {
-        console.log("res", res);
-        console.log(form.getFieldValue());
+      .then(async (res) => {
+        let params = form.getFieldValue();
+        params.id = params.id === "empty" ? null : params.id;
+        const result = await http.post("/mode/save", params);
+        if (result.code == 200) {
+          message.success(result.data.message);
+          setIsModalOpen(false);
+          getData();
+        }
         setIsModalOpen(false);
       })
       .catch((err) => {
@@ -171,7 +189,7 @@ const Theme = () => {
       <Button type="primary" className="add" onClick={() => handleItemEdit({})}>
         add
       </Button>
-      <Table columns={columns} dataSource={data} />;
+      <Table columns={columns} dataSource={data} loading={isLoading} />;
       <Modal
         title="Theme Modal"
         open={isModalOpen}
@@ -203,28 +221,13 @@ const Theme = () => {
             <Select placeholder="type" allowClear>
               <Select.Option value={1}>正计时</Select.Option>
               <Select.Option value={2}>倒计时</Select.Option>
+              <Select.Option value={3}>不计时</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item
-            name="time"
-            label="DuringTime"
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-          >
+          <Form.Item name="time" label="DuringTime">
             <Input />
           </Form.Item>
-          <Form.Item
-            name="remark"
-            label="Remark"
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-          >
+          <Form.Item name="remark" label="Remark">
             <Input.TextArea />
           </Form.Item>
         </Form>

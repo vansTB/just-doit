@@ -4,6 +4,7 @@ import {
   Card,
   Form,
   Input,
+  message,
   Modal,
   Popconfirm,
   Select,
@@ -16,151 +17,43 @@ import {
 } from "antd";
 
 import "./record.scss";
-import dayjs from "dayjs";
+import { http } from "@/utlis";
 
 const Record = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentEditItem, setCurrentEditItem] = useState({});
-  const [form] = Form.useForm();
+  let duringTimeInterval = useRef(null);
 
-  const layout = {
-    labelCol: {
-      span: 5,
-    },
-    wrapperCol: {
-      span: 19,
-    },
-  };
-
-  const [themeData, setThemeData] = useState([
-    {
-      key: "1",
-      name: "番茄钟",
-      type: 2,
-      duringTime: 25,
-      create_at: "2025-01-15",
-      remark:
-        "倒计时25分钟，即为番茄钟，这是一个很热门的学习时段，符合人的精力规律",
-    },
-    {
-      key: "3",
-      name: "测试正计时2",
-      type: 1,
-      duringTime: 30,
-      create_at: "2025-01-15",
-      remark: "这是个正计时",
-    },
-    {
-      key: "2",
-      name: "测试倒计时",
-      type: 2,
-      duringTime: 40,
-      create_at: "2025-01-15",
-      remark: "",
-    },
-  ]);
-  const [recordData, setRecordData] = useState([]);
-
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      render: (text) => <a>{text}</a>,
-    },
-    {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-      render: (_, { type }) => (
-        <>
-          <Tag color={type == 1 ? "green" : "blue"}>
-            {type == 1 ? "正计时" : "倒计时"}
-          </Tag>
-        </>
-      ),
-    },
-    {
-      title: "Time",
-      dataIndex: "duringTime",
-      key: "duringTime",
-      render: (_, { duringTime }) => (
-        <>
-          <div>{duringTime + "min"}</div>
-        </>
-      ),
-    },
-
-    {
-      title: "Action",
-      key: "action",
-      render: (_, record) => (
-        <Space size="middle">
-          <a onClick={() => handleItemEdit(record)}> play</a>
-        </Space>
-      ),
-    },
-  ];
-
-  const handleItemEdit = (item) => {
-    console.log("item", item);
-
-    setCurrentEditItem(
-      item.key
-        ? item
-        : {
-            key: "empty",
-            name: "",
-            type: "",
-            duringTime: "",
-            remark: "",
-          }
-    );
-  };
-  useEffect(() => {
-    if (currentEditItem && currentEditItem.key) {
-      form.setFieldsValue(currentEditItem);
-      setIsModalOpen(true);
-    }
-  }, [currentEditItem]);
-
-  const onDeleteConfirm = () => {
-    console.log("onDeleteConfirm");
-  };
-  const handleOk = async () => {
-    form
-      .validateFields()
-      .then((res) => {
-        console.log("res", res);
-        console.log(form.getFieldValue());
-        setIsModalOpen(false);
-      })
-      .catch((err) => {
-        console.log("err", err);
-      });
-  };
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
-
-  const [playInfo, setPlayInfo] = useState({
-    duringTime: 3600,
-  });
-  const handleBtnClick = (module) => {
-    console.log("module");
-    if (module === "back") {
+  const handleStop = (type) => {
+    if (type === "end") {
       setPlayInfo({
         ...playInfo,
-        module,
-        isPlay: false,
+        stopModalOpen: true,
+      });
+    } else {
+      setPlayInfo({
+        ...playInfo,
+        isPause: true,
         modalOpen: false,
       });
       clearInterval(duringTimeInterval.current);
-      duringTimeInterval.current = null;
-    } else if (module === "full-screen") {
+    }
+  };
+
+  const [playInfo, setPlayInfo] = useState({
+    isPlay: false,
+    isPause: false,
+    modeId: "",
+    targetTime: 3600,
+    duringTime: "",
+    modalOpen: false,
+    stopModalOpen: false,
+    runningTime: "", // 倒计时运行时间
+  });
+  const handleBtnClick = (mode) => {
+    console.log("mode");
+    if (mode === "full-screen") {
       setPlayInfo({
         ...playInfo,
-        module,
+        mode,
         isPlay: true,
         modalOpen: false,
         fullScreen: !playInfo.fullScreen,
@@ -168,16 +61,22 @@ const Record = () => {
     } else {
       setPlayInfo({
         ...playInfo,
-        module,
+        mode,
         modalOpen: true,
       });
     }
   };
   const handleBtnConfirm = () => {
+    if (playInfo.mode == 1) {
+      playInfo.duringTime = 0;
+    }
+
+    if (playInfo.mode == 2) {
+      playInfo.runningTime = playInfo.targetTime;
+    }
     setPlayInfo({
       ...playInfo,
       modalOpen: false,
-      isPlay: true,
     });
     handleDuringTimePlay();
   };
@@ -189,33 +88,82 @@ const Record = () => {
 
     return (hours > 0 ? hours + "时" : "") + minutes + "分" + secs + "秒";
   }
-  let duringTimeInterval = useRef(null);
   const handleDuringTimePlay = () => {
-    console.log("-------------");
-    if (duringTimeInterval.current) return;
-    duringTimeInterval.current = setInterval(() => {
-      setPlayInfo((playInfo) => {
-        console.log("playInfo", playInfo);
-        let duringTime = --playInfo.duringTime;
-        console.log("duringTime", duringTime);
-        let duringTimeStr = formatTime(duringTime);
-        return {
-          ...playInfo,
-          modalOpen: false,
-          isPlay: true,
-          duringTime,
-          duringTimeStr,
-        };
-      });
-    }, 1000);
+    if (duringTimeInterval.current && !playInfo.isPause) return;
+    if (playInfo.mode == "1") {
+      duringTimeInterval.current = setInterval(() => {
+        setPlayInfo((playInfo) => {
+          let duringTime = ++playInfo.duringTime;
+          let duringTimeStr = formatTime(duringTime);
+          return {
+            ...playInfo,
+            isPause: false,
+            modalOpen: false,
+            isPlay: true,
+            duringTime,
+            duringTimeStr,
+          };
+        });
+      }, 1000);
+    } else if (playInfo.mode == "2") {
+      duringTimeInterval.current = setInterval(() => {
+        setPlayInfo((playInfo) => {
+          let runningTime = --playInfo.runningTime;
+          let duringTimeStr = formatTime(runningTime);
+          return {
+            ...playInfo,
+            modalOpen: false,
+            isPause: false,
+            isPlay: true,
+            duringTime: ++playInfo.duringTime,
+            duringTimeStr,
+          };
+        });
+      }, 1000);
+    }
   };
 
   const handleBtnCancel = () => {
     setPlayInfo({
       ...playInfo,
       modalOpen: false,
+      stopModalOpen: false,
       isPlay: false,
     });
+  };
+
+  const handleStopConfirm = async () => {
+    let params = {};
+    if (playInfo.mode == 1) {
+      // 无极模式
+      params.modeId = 1;
+      params.status = 1;
+      params.duringTime = playInfo.duringTime;
+    } else {
+      // 番茄模式
+      params.modeId = 2;
+      params.status = 0;
+      params.duringTime = playInfo.duringTime;
+      // 倒计时运行完毕
+      if (playInfo.runningTime == 0) {
+        params.status = 1;
+      }
+    }
+    const result = await http.post("/record/save", params);
+    if (result.code == 200) {
+      if (result.status == 1) {
+        message.success("恭喜你，完成了~~");
+      } else {
+        message.success("加油，聚少成多~~");
+      }
+      clearInterval(duringTimeInterval.current);
+      duringTimeInterval.current = null;
+      setPlayInfo({
+        ...playInfo,
+        isPlay: false,
+        stopModalOpen: false,
+      });
+    }
   };
   return (
     <div
@@ -226,10 +174,10 @@ const Record = () => {
       <div className="btn-list">
         {!playInfo.isPlay ? (
           <Fragment>
-            <div onClick={() => handleBtnClick("infinite")} className="btn">
+            <div onClick={() => handleBtnClick("1")} className="btn">
               无极模式
             </div>
-            <div onClick={() => handleBtnClick("tomato")} className="btn">
+            <div onClick={() => handleBtnClick("2")} className="btn">
               番茄模式
             </div>
             <div onClick={() => handleBtnClick("other")} className="btn">
@@ -242,9 +190,20 @@ const Record = () => {
         ) : (
           <Fragment>
             <div className="duringTime-box">{playInfo.duringTimeStr}</div>
-            <div onClick={() => handleBtnClick("back")} className="btn">
-              返回
+            {!playInfo.isPause ? (
+              <div onClick={() => handleStop("pause")} className="btn">
+                暂停
+              </div>
+            ) : (
+              <div onClick={handleDuringTimePlay} className="btn">
+                继续
+              </div>
+            )}
+
+            <div onClick={() => handleStop("end")} className="btn">
+              终止
             </div>
+
             <div onClick={() => handleBtnClick("full-screen")} className="btn">
               {!playInfo.fullScreen ? "全屏模式" : "正常模式"}
             </div>
@@ -256,6 +215,13 @@ const Record = () => {
         title="确定开始了嘛？"
         open={playInfo.modalOpen}
         onOk={handleBtnConfirm}
+        onCancel={handleBtnCancel}
+      ></Modal>
+
+      <Modal
+        title="确定终止了嘛？"
+        open={playInfo.stopModalOpen}
+        onOk={handleStopConfirm}
         onCancel={handleBtnCancel}
       ></Modal>
     </div>

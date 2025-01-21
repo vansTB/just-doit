@@ -1,12 +1,17 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { RecordService } from './record.service';
 
 @Controller('/record')
 export class RecordController {
   constructor(private readonly recordService: RecordService) {}
 
-  @Get('/handleRecord')
-  handleRecord() {
-    return this.recordService.handleRecord();
+  @Get('/list')
+  list() {
+    return this.recordService.list();
+  }
+
+  @Post('/save')
+  save(@Body() data) {
+    return this.recordService.save(data);
   }
 }
