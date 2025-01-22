@@ -43,13 +43,14 @@ export function handleMenuListToTree(data) {
       // item.iconStr = item.icon;
       item.icon = <IconFont type={item.icon} />;
     }
-    item.key = item.path || item.id;
+    item.key = item.path || item.id + "";
     if (item.type == 1) {
       tmpArr1.push(item);
       for (let j = i; j < data.length; j++) {
         let jtem = data[j];
         if (jtem.parent_id === item.id) {
           item.children = item.children || [];
+          jtem.parent_key = item.key;
           item.children.push(jtem);
         }
       }

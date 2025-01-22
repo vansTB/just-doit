@@ -189,7 +189,13 @@ const Theme = () => {
       <Button type="primary" className="add" onClick={() => handleItemEdit({})}>
         add
       </Button>
-      <Table columns={columns} dataSource={data} loading={isLoading} />;
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={data}
+        loading={isLoading}
+      />
+      ;
       <Modal
         title="Theme Modal"
         open={isModalOpen}
