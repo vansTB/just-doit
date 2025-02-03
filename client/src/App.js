@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  HashRouter,
+} from "react-router-dom";
 
 import PageLayout from "./pages/layout";
 import { userStore } from "./store/user";
@@ -81,7 +87,7 @@ const App = () => {
     );
   };
   return (
-    <BrowserRouter>
+    <HashRouter>
       {/* {loading && <GlobalLoading />} */}
       <React.Suspense>
         <Routes>
@@ -129,7 +135,7 @@ const App = () => {
           />
         </Routes>
       </React.Suspense>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 

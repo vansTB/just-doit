@@ -1,9 +1,9 @@
-import { createBrowserRouter, Route } from "react-router-dom";
+import { createBrowserRouter, createHashRouter, Route } from "react-router-dom";
 import Layout from "@/pages/layout";
 import Login from "@/pages/login";
 import User from "@/pages/user";
-import Record from "@/pages/dazuoi/record";
-import Theme from "@/pages/dazuoi/mode";
+import Record from "@/pages/dazuo/record";
+import Theme from "@/pages/dazuo/mode";
 import Home from "@/pages/home";
 import { AuthRoute } from "@/components/authRoute";
 import Menu from "@/pages/user/menu";
@@ -14,7 +14,7 @@ import { useState } from "react";
 console.log("store", userStore.getState());
 
 const [routes, setRoutes] = useState;
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: "/",
     element: (

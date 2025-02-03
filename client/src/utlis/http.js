@@ -5,7 +5,11 @@ import { useNavigate } from "react-router-dom";
 import { useStore } from "zustand";
 
 const http = axios.create({
-  baseURL: "/",
+  // baseURL: "https://onepiece-breath.top/just_doit/",
+  baseURL:
+    process.env === "development"
+      ? "/"
+      : "https://onepiece-breath.top/just_doit_server/",
   timeout: 5000,
 });
 

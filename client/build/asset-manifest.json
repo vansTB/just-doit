@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/just_doit/static/css/main.cbb1cdf5.css",
+    "main.js": "/just_doit/static/js/main.3dbd77b0.js",
+    "static/media/dazuo_ing.jpg": "/just_doit/static/media/dazuo_ing.de9ac2a16cc141e7af16.jpg",
+    "static/media/login_bg.jpg": "/just_doit/static/media/login_bg.c7fd3af46c2dded467fa.jpg",
+    "static/media/dazuo.jpg": "/just_doit/static/media/dazuo.1da4b5ad14c341e9f490.jpg",
+    "index.html": "/just_doit/index.html",
+    "main.cbb1cdf5.css.map": "/just_doit/static/css/main.cbb1cdf5.css.map",
+    "main.3dbd77b0.js.map": "/just_doit/static/js/main.3dbd77b0.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.cbb1cdf5.css",
+    "static/js/main.3dbd77b0.js"
+  ]
+}
